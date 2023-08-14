@@ -203,6 +203,9 @@ namespace ReaParser {
 			if (strcmp(buffer, "win64") == 0 ||
 				strcmp(buffer, "win32") == 0)
 				project.Version.Platform = ReaVersion::ReaPlatform::Windows;
+			if (strcmp(buffer, "OSX64") == 0 ||
+				strcmp(buffer, "OSX32") == 0)
+				project.Version.Platform = ReaVersion::ReaPlatform::OSX;
 		}
 		else {
 			throw BadFile("Invalid Reaper project: " + project.Filepath);
