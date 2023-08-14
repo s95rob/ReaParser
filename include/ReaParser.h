@@ -60,7 +60,7 @@ namespace ReaParser {
 			Sample, Midi
 		} Type = MediaType::Undefined;
 
-		std::string Name;
+		std::string Name, Filepath;
 		float Volume = 0.0, Pan = 0.0;
 		bool Muted = false;
 
@@ -329,6 +329,7 @@ namespace ReaParser {
 		const char* itemFooter = "    >";
 		const char* midiHeader = "      <SOURCE MIDI";
 		const char* waveHeader = "      <SOURCE WAVE";
+		const char* mp3Header  = "      <SOURCE MP3";
 
 		while (fgets(buffer, ReaBuffer_Max, fp) != NULL) {
 			if (strncmp(buffer, itemFooter, strlen(itemFooter)) == 0)
@@ -343,11 +344,16 @@ namespace ReaParser {
 			sscanf(buffer, "      VOLPAN %f %f %*f %*f",
 				&item.Volume, &item.Pan);
 
-			// todo: Grab MediaItem filepath
 			if (strncmp(buffer, midiHeader, strlen(midiHeader)) == 0)
 				item.Type = ReaMediaItem::MediaType::Midi;
-			if (strncmp(buffer, waveHeader, strlen(waveHeader)) == 0)
+			if (strncmp(buffer, waveHeader, strlen(waveHeader)) == 0 ||
+				strncmp(buffer, mp3Header, strlen(mp3Header)) == 0) {
 				item.Type = ReaMediaItem::MediaType::Sample;
+				// Advance to next line and attempt to grab filepath
+				fgets(buffer, ReaBuffer_Max, fp);
+				if (sscanf(buffer, "        FILE \"%[^\"]s\" %*f", &buffer) == 1)
+					item.Filepath = buffer;
+			}
 		}
 
 		// Apply options
