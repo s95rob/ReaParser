@@ -71,6 +71,8 @@ for (auto& track : project.Tracks) {
     std::cout << "Items: ---------------------" << std::endl;
     for (auto& item : track.MediaItems) {
       std::cout << "\"" << item.Name << "\"" << std::endl;
+      if (item.Type == ReaParser::ReaMediaItem::MediaType::Sample)
+          std::cout << "FILE  : " << item.Filepath << std::endl;
       std::cout << "START : " << item.Start << "s" << std::endl;
       std::cout << "END   : " << item.End << "s" << std::endl;
       std::cout << "LENGTH: " << item.Length << "s" << std::endl;
@@ -78,6 +80,8 @@ for (auto& track : project.Tracks) {
   }
 }
 ```
+
+(See [Test.cpp](https://github.com/s95rob/ReaParser/blob/master/testing/Test.cpp) for more functionality)
 
 ## Todo
 + Project preferences

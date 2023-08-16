@@ -9,7 +9,7 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
-#include <iostream>
+
 namespace ReaParser {
 
 	constexpr size_t ReaBuffer_Max = 1024;
@@ -218,6 +218,9 @@ namespace ReaParser {
 			if (strcmp(buffer, "win64") == 0 ||
 				strcmp(buffer, "win32") == 0)
 				project.Version.Platform = ReaVersion::ReaPlatform::Windows;
+			if (strcmp(buffer, "OSX64") == 0 ||
+				strcmp(buffer, "OSX32") == 0)
+				project.Version.Platform = ReaVersion::ReaPlatform::OSX;
 		}
 		else {
 			throw BadFile("Invalid Reaper project: " + project.Filepath);
