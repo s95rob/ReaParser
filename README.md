@@ -7,7 +7,7 @@ Reverse engineering of Reaper project files is done by trial and error. ReaParse
 ReaParser can extract the following information from a Reaper project file:
 
 ### Projects:
-+ Filename
++ Name
 + Reaper version and OS saved with
 + Sample Rate
 + Master tempo and time signature
