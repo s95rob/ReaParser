@@ -8,7 +8,8 @@
 #include <vector>
 #include <cstring>
 #include <cmath>
-
+#include <algorithm>
+#include <iostream>
 namespace ReaParser {
 
 	constexpr size_t ReaBuffer_Max = 1024;
@@ -53,16 +54,18 @@ namespace ReaParser {
 			return std::string(PlatformString() + " " + std::to_string(Major) + "." + std::to_string(Minor));
 		}
 	};
+	
+	enum class ReaMediaType {
+		Undefined = 0,
+		Sample, Midi
+	};
 
 	struct ReaMediaItem {
-		enum class MediaType {
-			Undefined = 0,
-			Sample, Midi
-		} Type = MediaType::Undefined;
 
 		std::string Name, Filepath;
 		float Volume = 0.0, Pan = 0.0;
 		bool Muted = false;
+		ReaMediaType Type = ReaMediaType::Undefined;
 
 		// Start position in seconds
 		float Start = 0.0f;
@@ -75,13 +78,24 @@ namespace ReaParser {
 
 		std::string ToString() {
 			switch (Type) {
-			case MediaType::Sample: return "Sample";
-			case MediaType::Midi: return "Midi";
+			case ReaMediaType::Sample: return "Sample";
+			case ReaMediaType::Midi: return "Midi";
 			default: return "Unknown";
 			}
 		}
 	};
 	using ReaMediaItems = std::vector<ReaMediaItem>;
+
+	enum class ReaFXType {
+		Undefined = 0,
+		VST, VST3, VSTi, VST3i, AU, AUi, JS
+	};
+
+	struct ReaFX {
+		std::string Name, Filepath, Data;
+		ReaFXType Type;
+	};
+	using ReaFXChain = std::vector<ReaFX>;
 
 	struct ReaTrack {
 	public:
@@ -94,7 +108,7 @@ namespace ReaParser {
 		bool PhaseInverted = false;
 
 		ReaMediaItems MediaItems;
-
+		ReaFXChain FXChain;
 	private:
 		ReaProject* m_project;
 	};
@@ -170,6 +184,7 @@ namespace ReaParser {
 		static void LoadTracks(FILE* fp, ReaProject& project);
 		static void LoadMasterTrack(FILE* fp, ReaProject& project);
 		static void LoadMediaItem(FILE* fp, ReaTrack& track);
+		static void LoadFX(FILE* fp, ReaTrack& track);
 	};
 
 	// Loads Reaper project data from file
@@ -258,6 +273,8 @@ namespace ReaParser {
 				track.GUID = buffer;
 				track.NumericID = ++trackCount;
 
+				const char* fxChainHeader = "    <FXCHAIN";
+
 				// Read from track data
 				while (fgets(buffer, ReaBuffer_Max, fp) != NULL) {
 					if (strncmp(buffer, trackFooter, strlen(trackFooter)) == 0)
@@ -280,6 +297,11 @@ namespace ReaParser {
 					// Load MediaItem
 					if (strncmp(buffer, itemHeader, strlen(itemHeader)) == 0)
 						LoadMediaItem(fp, track);
+
+					// Load FX
+					if (strncmp(buffer, fxChainHeader, strlen(fxChainHeader)) == 0) {
+						LoadFX(fp, track);
+					}
 				}
 
 				// Apply options
@@ -345,10 +367,10 @@ namespace ReaParser {
 				&item.Volume, &item.Pan);
 
 			if (strncmp(buffer, midiHeader, strlen(midiHeader)) == 0)
-				item.Type = ReaMediaItem::MediaType::Midi;
+				item.Type = ReaMediaType::Midi;
 			if (strncmp(buffer, waveHeader, strlen(waveHeader)) == 0 ||
 				strncmp(buffer, mp3Header, strlen(mp3Header)) == 0) {
-				item.Type = ReaMediaItem::MediaType::Sample;
+				item.Type = ReaMediaType::Sample;
 				// Advance to next line and attempt to grab filepath
 				fgets(buffer, ReaBuffer_Max, fp);
 				if (sscanf(buffer, "        FILE \"%[^\"]s\" %*f", &buffer) == 1)
@@ -366,5 +388,76 @@ namespace ReaParser {
 
 		item.End = item.Start + item.Length;
 		track.MediaItems.push_back(item);
+	}
+
+	inline void Parser::LoadFX(FILE* fp, ReaTrack& track) {
+		ReaBuffer buffer, fxTypeName, fxName, fxFile;
+		const char* fxChainFooter = "    >";
+		const char* fxFooter = "      >";
+
+		while (fgets(buffer, ReaBuffer_Max, fp) != NULL) {
+			if (strncmp(buffer, fxChainFooter, strlen(fxChainFooter)) == 0)
+				break;
+
+			// Standard FX
+			if (sscanf(buffer, "      <%*s \"%[^:]: %[^\"]\" %s 0 \"\" %*i<%*32s> \"\"", 
+				fxTypeName, fxName, fxFile) == 3) {
+				ReaFX fx;
+				
+				fx.Name = fxName;
+				fx.Filepath = fxFile;
+				if (strncmp(fxTypeName, "VST", 3) == 0)
+					fx.Type = ReaFXType::VST;
+				else if (strncmp(fxTypeName, "VST3", 4) == 0)
+					fx.Type = ReaFXType::VST3;
+				else if (strncmp(fxTypeName, "VSTi", 4) == 0)
+					fx.Type = ReaFXType::VSTi;
+				else if (strncmp(fxTypeName, "VST3i", 5) == 0)
+					fx.Type = ReaFXType::VST3i;
+				else if (strncmp(fxTypeName, "AU", 2) == 0)
+					fx.Type = ReaFXType::AU;
+				else if (strncmp(fxTypeName, "AUi", 3) == 0)
+					fx.Type = ReaFXType::AUi;
+
+				// Grab data strings from FX
+				while (fgets(buffer, ReaBuffer_Max, fp) != NULL) {
+					if (strncmp(buffer, fxFooter, strlen(fxFooter)) == 0)
+						break; // FX footer hit
+					
+					fx.Data.append(buffer);
+				}
+
+				// Strip any tab, space and Windows \r characters from data string
+				fx.Data.erase(std::remove(fx.Data.begin(), fx.Data.end(), '\t'), fx.Data.cend());
+				fx.Data.erase(std::remove(fx.Data.begin(), fx.Data.end(), ' '), fx.Data.cend());
+				fx.Data.erase(std::remove(fx.Data.begin(), fx.Data.end(), '\r'), fx.Data.cend());
+
+				track.FXChain.push_back(fx);
+			}
+
+			// JesuSonic FX
+			if (strncmp(buffer, "      <JS ", 10) == 0) {
+				sscanf(buffer, "      <JS %s \"\"", fxName);
+				ReaFX jsFx;
+				jsFx.Name = fxName;
+				jsFx.Type = ReaFXType::JS;
+
+				// Just grab the next line's data string
+				fgets(buffer, ReaBuffer_Max, fp);
+				jsFx.Data = buffer;
+
+				// And then remove leading spaces
+				for (auto it = jsFx.Data.begin(); it != jsFx.Data.end(); ++it) {
+					char c = *it;
+
+					if (c != ' ') {
+						jsFx.Data.erase(jsFx.Data.begin(), it);
+						break;
+					}
+				}
+
+				track.FXChain.push_back(jsFx);
+			}
+		}
 	}
 }

@@ -1,6 +1,34 @@
 # ReaParser
 Header-only C++11 file parser for [Reaper](https://www.reaper.fm/) project files. 
 
+Reverse engineering of Reaper project files is done by trial and error. ReaParser is experimental, some results may be unexpected. 
+
+## Features
+ReaParser can extract the following information from a Reaper project file:
+
+### Projects:
++ Filename
++ Reaper version and OS saved with
++ Sample Rate
++ Master tempo and time signature
+
+### Tracks:
++ Name
++ Volume/Pan
++ Media Items
++ FX Chain
+
+### Media Items:
++ Name
++ Associated filepath and file format
++ Start and end positions
++ Length
+
+### FX Plugins:
++ Name
++ Associated filepath and file format
++ Data string
+
 ## Usage
 
 ### Load project in memory
@@ -50,3 +78,9 @@ for (auto& track : project.Tracks) {
   }
 }
 ```
+
+## Todo
++ Project preferences
++ Automation
++ Regions
++ More Media Item details
