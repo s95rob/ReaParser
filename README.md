@@ -71,7 +71,7 @@ for (auto& track : project.Tracks) {
     std::cout << "Items: ---------------------" << std::endl;
     for (auto& item : track.MediaItems) {
       std::cout << "\"" << item.Name << "\"" << std::endl;
-      if (item.Type == ReaParser::ReaMediaItem::MediaType::Sample)
+      if (item.Type == ReaParser::ReaMediaType::Sample)
           std::cout << "FILE  : " << item.Filepath << std::endl;
       std::cout << "START : " << item.Start << "s" << std::endl;
       std::cout << "END   : " << item.End << "s" << std::endl;
