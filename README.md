@@ -48,7 +48,7 @@ catch (ReaParser::Exception& e) {
 ```c++
 std::cout << "Reaper project: " << project.Name << std::endl;
 std::cout << "Reaper version: " << project.Version.ToString() << std::endl;
-std::cout << "Sample rate: " << project.SampleRate << "kHz" << std::endl;
+std::cout << "Sample rate: " << project.SampleRate << std::endl;
 std::cout << "Tempo: " << project.Tempo.BPM << " bpm " << project.Tempo.Beats << "/" << project.Tempo.Bars << std::endl << std::endl;
 ```
 ### Access tracks from project
