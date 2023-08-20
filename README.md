@@ -1,5 +1,5 @@
 # ReaParser
-Header-only C++11 file parser for [Reaper](https://www.reaper.fm/) project files. 
+Single file header-only C++11 file parser for [Reaper](https://www.reaper.fm/) project files. 
 
 Reverse engineering of Reaper project files is done by trial and error. ReaParser is experimental, some results may be unexpected. 
 
