@@ -14,7 +14,11 @@ ReaParser can extract the following information from a Reaper project file:
 
 ### Tracks:
 + Name
++ Numeric ID
++ GUID
 + Volume/Pan
++ Mute/Solo
++ Phase
 + Media Items
 + FX Chain
 
