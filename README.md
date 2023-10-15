@@ -1,7 +1,7 @@
 # ReaParser
 Single file header-only C++11 file parser for [Reaper](https://www.reaper.fm/) project files. 
 
-Reverse engineering of Reaper project files is done by trial and error. ReaParser is experimental, some results may be unexpected. 
+Reverse engineering of Reaper project files is done empirically. ReaParser is experimental, some results may be unexpected. 
 
 ## Features
 ReaParser can extract the following information from a Reaper project file:
